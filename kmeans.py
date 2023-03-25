@@ -1,60 +1,52 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-
-def euclidian_distance(X1, X2):
-    return np.sqrt(np.sum((X1-X2)**2))
-
-
 class KMeans:
-    def __init__(self, K=5, max_iters=100, plot_steps=False):
+    def __init__(self, K=7, max_iters=10, plot_steps=False):
         self.K = K
         self.max_iters = max_iters
         self.plot_steps = plot_steps
 
         # Lista de indices para cada cluster
         self.clusters = [[] for _ in range(self.K)]
+        self.centroides = None
 
-        # los centroides
-        self.centroides = []
-
-    def predict(self, X):
-        self.X = X
-        self.n_samples, self.n_features = X.shape
-
-        # Inicializacion
-        random_sample_indxs = np.random.choice(
-            self.n_samples, self.K, replace=False)
-        self.centroides = [self.X[idx] for idx in random_sample_indxs]
+    
+    def train(self, X):
+        # inicializamos los centroides
+        self.centroides = np.random.rand(self.K,X.shape[1])
+        centroids_old = self.centroides.copy()
 
         for _ in range(self.max_iters):
+            distance=None
+            for sample in range(1,self.K):
+                distance = self.euclidian_distance
+            samples = np.argmin(distance,axis=1) 
             # asignar los datos al centroide mas cercano
-            self.clusters = self._create_clusters(self.centroides)
-
-            if self.plot_steps:
-                self.plot()
-
-            # calcualr los nuevos centroids
-            centrois_old = self.centroides
-            self.centroides = self._get_centroids(self.clusters)
-
-            if self._is_converged(centrois_old, self.centroides):
+            for sample in set(samples):
+                self.centroides[sample,:] = self._get_clusters_labels(self, X, samples, sample)
+            #Si los centroides convergen, 
+            if self._is_converged(centroids_old, self.centroides):
                 break
+        return None
 
-            if self.plot_steps:
-                self.plot()
 
-        # classify samples as the index of their clusters
-        return self._get_clusters_labels(self.clusters)
+    def predict(self, X):
+        distance = None
+        for sample in range(1,self.k):
+            distance = self.euclidian_distance
+        return self._get_centroids(distance)
+        
 
-    def _get_clusters_labels(self, clusters):
+    def _get_clusters_labels(self, X,samples, sample):
+        clusters=7
         # each sample will get the label of the cluster it was assigned to
         labels = np.empty(self.n_samples)
         for cluster_idx, cluster in enumerate(clusters):
             for sample_idx in cluster:
                 labels[sample_idx] = cluster_idx
 
-        return labels
+        return np.mean(X[samples == sample,:],axis=0)
 
     def _create_clusters(self, centroids):
         # Empezamos con una lista vacia para cada cluster
@@ -67,23 +59,23 @@ class KMeans:
     def _closest_centroid(self, muestra, centroids):
         # determinar la distancia de cada muestra a cada centroide
         # para despues obtener el centroide mas cercano
-        distances = [euclidian_distance(muestra, punto) for punto in centroids]
+        distances = [self.euclidian_distance(muestra, punto) for punto in centroids]
         closest_index = np.argmin(distances)
         return closest_index
 
-    def _get_centroids(self, clusters):
+    def _get_centroids(self, distance):
         # Asigna el valor medio de los clusters a los centroides
         centroids = np.zeros((self.K, self.n_features))
-        for cluster_index, cluster in enumerate(clusters):
-            cluster_mean = np.mean(self.X[cluster], axis=0)
-            centroids[cluster_index] = cluster_mean
-        return centroids
+        
+        return np.argmin(distance,axis=1)
 
     def _is_converged(self, centroids_old, centroids):
         # distancias entre viejos y nuevos centroides
-        distances = [euclidian_distance(
-            centroids_old[i], centroids[i]) for i in range(self.K)]
-        return sum(distances) == 0
+        result = np.linalg.norm(centroids - centroids_old) < 1e-3
+        return result
+    
+    def euclidian_distance(self, X):
+        return np.linalg.norm(X - self.centroides[0,:],axis=1).reshape(-1,1)
 
     def plot(self):
         fig, ax = plt.subplots(figsize=(12, 8))
@@ -96,24 +88,3 @@ class KMeans:
             ax.scatter(*point, marker='x', color='black', linewidth=2)
 
         plt.show()
-
-
-if __name__ == '__main__':
-    np.random.seed(42)
-    from sklearn.datasets import make_blobs
-
-    X, y = make_blobs(
-        centers=3, n_samples=500, n_features=3, shuffle=True, random_state=40
-    )
-
-    print(X)
-    print(X.shape)
-    print(y)
-
-    clusters = len(np.unique(y))
-    print(clusters)
-
-    k = KMeans(K=clusters, max_iters=150, plot_steps=True)
-    y_pred = k.predict(X)
-
-    k.plot()
