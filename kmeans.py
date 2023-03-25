@@ -103,9 +103,12 @@ if __name__ == '__main__':
     from sklearn.datasets import make_blobs
 
     X, y = make_blobs(
-        centers=3, n_samples=500, n_features=2, shuffle=True, random_state=40
+        centers=3, n_samples=500, n_features=3, shuffle=True, random_state=40
     )
+
+    print(X)
     print(X.shape)
+    print(y)
 
     clusters = len(np.unique(y))
     print(clusters)
